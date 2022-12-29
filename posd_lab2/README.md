@@ -1,82 +1,36 @@
-# Pattern Oriented Software Design 2022 Fall Assignment
+# Pattern Oriented Software Design 2022 Final Exam
 
-## Assignment 6
-
-#### Deadline: 12/19 Mon. 23:59
+### Deadline: 12/26 Mon. 16:00
 
 ## Introduction
 
-In this assignment, you are required to complete the drag and drop functionality with undo by implementing the `Command` pattern.
+In this exam, you are asked to apply the `Observer` pattern to redraw the shapes.
 
-The deadline is at 23:59, 12/19(Mon.).
-
+The deadline is at 16:00, 12/26(Mon.).
 
 ## Problem statement
 
-This assignment includes two parts, the drag and drop function and the undo.
-First we focus the drag and drop function.
+In the last assignment, we have complete the drag and drop function on shapes. When a shape is moved, its position on window should be repainted. However, the existing implementation depends on polling, meaning that the window actively asks for repainting every 50ms. In this exam, you are asked to replace the polling with a `Observer`, by which the window repaints shapes only when the shape is moved.
 
-### 1. Drag and drop
+Below is the structure of the `Observer` pattern. The `Subject` refers to an observable, the one that is operated. It knows several `Observer`s. Whenever there is a new changes on the subject, the subject notifies its observers to update their states by getting new states from the subject.
 
-The drag and drop contains three actions: grab, move, and drop. When a user presses his/her mouse on an shape, we say that the user *grabs* the shape. Then, when the user moves his/her mouse on the screen while the mouse is being pressed, we say that the user *moves* the shape and that the shape should be moved with the mouse movement. These two actions, grab and move, are meant to *drag* the shape. When the user release the mouse at a place s/he likes, we say that the user *drops* the shape and that the shape should be placed at the place.
+![Observer structure](/materials/ObserverStructure.png)
 
-![Drag and drop](/materials/drag_and_drop.gif)
+The class diagram is shown below. On the left side of the diagram, there are classes we used to open a window and render shapes. On the right side, the classes with bolder borders are the ones you need to implement:
 
-Below is the class diagram for the three actions, in which we have three commands for the three actions: `GrabCommand`, `MoveCommand`, and `DropCommand`.
+1. The standard interfaces of the `Observer` pattern, `Subject` and `Observer`.
+2. The `Drawing` class, which represents the rendered shapes. It owns the shape instances. Classes that need to make changes on shapes should ask `Drawing` for access.
+3. The `RealCanvas` class, which helps to repaint shapes on the window. It is *attached* on the `Drawing` for monitoring any changes happen on the shapes.
 
-![Drag and drop class diagram](materials/DragAndDropClassDiagram.png)
+![Observer class diagram](/materials/Observer.png)
 
-`SDLRenderer` is the class responsible for rendering shapes on the screen. It can also detect events from user actions, such as mouse click or mouse move. Whenever it detects an event occurred, it notifies `EventListener` to carry out the corresponding callbacks.
+When we click and move a shape, the correspond commands are triggered to call the DragAndDrop to carry out the drag function. In the previous assignment, the DragAndDrop takes the shape instances directly; in this exam instead, it takes `Drawing` to access the shape instances. It asks `Drawing` to get all shapes to find out the one the user chosen.
 
-The term *callback* refers to an `Command` instance that we register on the `EventListener`. The instance will be invoked when the registered event occurred.
-For example, if we register an `GrabCommand` on the `EventListener` for the `Left_Mouse_Down` event, when the user click the left mouse button, the `SDLRenderer` will notify `EventListener` by calling the leftMouseDown method of the listener, and the `EventListener` will triggered the `GrabCommand` instance by calling the execute method of the command.
-```c++
-// graphics.cpp
-EventListener eventListener;
-eventListener.on("Left_Mouse_Down", new GrabCommand(...));
+After moving a shape, the DragAndDrop has to let the `RealCanvas` know that there is a new change on shapes, meaning that it should call `notify` from `Drawing`.
 
-// event_listener.h
-void leftMouseDown(...) {
-  _callbacks["Left_Mouse_Down"]->execute();
-}
-```
+Then, the `RealCanvas` gets notified because it is attached on the `Drawing`. It calls `ShapePrinter` to redraw shapes on the window.
 
-We need to register three commands on the listener:
-
-1. `GrabCommand` for the `Left_Mouse_Down`,
-2. `MoveCommand` for the `Left_Mouse_Move`, and
-3. `DropCommand` for the `Left_Mouse_Up`.
-
-For these three commands, they both inherit from the `Command` interface and have the same receiver, the `DragAndDrop` component, which has been implemented for the drag and drop function. Therefore in the constructor of these commands, they should take the `DragAndDrop` instance as an argument and calls the corresponding method from the `DragAndDrop`.
-
-The `GrabCommand` calls the `grab` from `DragAndDrop`. The `grab` takes the current position of the mouse as the arguments. So before calling the `drag`, the `GrabCommand` should ask the position of the mouse, same for the `MoveCommand` and `DropCommand`, which call the `move` and the `drop` respectively.
-
-### 2. Undo
-
-In this assignment, we also have to make the program support the undo function. The program undoes the previous action when the user clicks the right mouse button. For example, when the user drags and drops a shape from point A to point B, and then the user clicks the right mouse button, the shape should be moved back from B to A.
-
-![Undo](/materials/undo.gif)
-
-Below is the class diagram for undo.
-
-![Command history](/materials/CommandHistory.png)
-
-There is a new command called `UndoCommand` that should be registered on the listener for the `Right_Mouse_Down` event. When the event is triggered, `UndoCommand` executes `undo` from `CommandHistory`.
-
-`CommandHistory` is the class used to record the commands that have been executed. It has a `stack` for storing commands. Since the stack is Last-in-First-out (LIFO), the command executed lastly can be recovered firstly. For drag and drop, the `GrabCommand`, `MoveCommand`, and `DropCommand` should be stored in the history after being executed.
-
-To undo an "drag and drop", we cannot solely undo a single grab, a single move or a single drop every time the user click right button. We need to undo the entire "drag and drop" to put the shape back to the original place. Therefore, we need `MacroCommand` to help us to store the commands of an "drag and drop" as a single command. For example, if we drag and drop a shape from point A to point B, we will have the sequence of the commands like below:
-
-GrabCommand<br/>
-MoveCommand<br/>
-...<br/>
-MoveCommand<br/>
-DropCommand<br/>
-
-These commands should be put in a `MacroCommand` that is stored in the command history rather than be put in the history directly. In the history since we have the `MacroCommand` that records the entire "drag and drop", if we need to undo the "drag and drop", we just undo the `MacroCommand`. We can also see there are two methods on `CommandHistory`, `beginMacroCommand` and `endMacroCommand`, indicating the history that in the following we are performing a series of commands that should be recorded a macro command.
-
-
-This assignment asks you to implement `GrabCommand`, `MoveCommand`, and `DropCommand` to complete the drag and drop function and to implement `UndoCommand`, `MacroCommand`, and `CommandHistory` to complete the undo function.
+In this exam, you are asked to apply the `Observer` pattern, the four classes described above, to replace the polling used in the previous assignment.
 
 ## File structure
 
@@ -91,18 +45,21 @@ The file structure is as followed. The project has two parts: `src` and `test`. 
  |   |   ├── shape_builder.h
  |   |   └── shape_parser.h
  │   ├── graphics
-+|   |   ├── drag_and_drop
-+|   |   |   ├── command
-+|   |   |   |   ├── command.h
-+|   |   |   |   ├── grab_command.h
-+|   |   |   |   ├── move_command.h
-+|   |   |   |   ├── drop_command.h
-+|   |   |   |   ├── undo_command.h
-+|   |   |   |   ├── macro_command.h
-+|   |   |   |   ├── command_history.h
-+|   |   |   |   └── refresh_command.h
-+|   |   |   ├── drag_and_drop.h
-+|   |   |   └── mouse_position.h
+ |   |   ├── drag_and_drop
+ |   |   |   ├── command
+ |   |   |   |   ├── command.h
+ |   |   |   |   ├── grab_command.h
+ |   |   |   |   ├── move_command.h
+ |   |   |   |   ├── drop_command.h
+ |   |   |   |   ├── undo_command.h
+ |   |   |   |   ├── macro_command.h
+ |   |   |   |   ├── command_history.h
+ |   |   |   |   └── refresh_command.h
+ |   |   |   ├── drag_and_drop.h
+ |   |   |   └── mouse_position.h
++|   |   ├── observer
++|   |   |   ├── observer.h
++|   |   |   └── subject.h
  |   |   ├── sdl
  |   |   |   ├── piece
  |   |   |   |   ├── cir_piece.h
@@ -111,7 +68,9 @@ The file structure is as followed. The project has two parts: `src` and `test`. 
  |   |   |   ├── sdl_renderer.h
  |   |   |   └── sdl.h
  |   |   ├── canvas.h
-+|   |   ├── event_listener.h
+ |   |   ├── event_listener.h
++|   |   ├── drawing.h
++|   |   ├── real_canvas.h
  |   |   └── sdl_adapter.h
  │   ├── iterator
  |   |   ├── factory
@@ -148,17 +107,22 @@ The file structure is as followed. The project has two parts: `src` and `test`. 
  |   |   ├── ut_shape_builder.h
  |   |   └── ut_shape_parser.h
  │   ├── graphics
-+|   |   ├── drag_and_drop
-+|   |   |   ├── command
-+|   |   |   |   ├── mock_command.h
-+|   |   |   |   ├── ut_grab_command.h
-+|   |   |   |   ├── ut_move_command.h
-+|   |   |   |   ├── ut_drop_command.h
-+|   |   |   |   ├── ut_undo_command.h
-+|   |   |   |   ├── ut_macro_command.h
-+|   |   |   |   └── ut_command_history.h
-+|   |   |   └── mock_drag_and_drop.h
+ |   |   ├── drag_and_drop
+ |   |   |   ├── command
+ |   |   |   |   ├── mock_command.h
+ |   |   |   |   ├── ut_grab_command.h
+ |   |   |   |   ├── ut_move_command.h
+ |   |   |   |   ├── ut_drop_command.h
+ |   |   |   |   ├── ut_undo_command.h
+ |   |   |   |   ├── ut_macro_command.h
+ |   |   |   |   └── ut_command_history.h
+ |   |   |   └── mock_drag_and_drop.h
++|   |   ├── observer
++|   |   |   ├── mock_observer.h
++|   |   |   └── ut_subject.h
  |   |   ├── mock_sdl_renderer.h
++|   |   ├── ut_drawing.h
++|   |   ├── ut_real_canvas.h
  |   |   └── ut_sdl_adapter.h
  │   ├── iterator
  │   │   ├── ut_bfs_compound_iterator.h
@@ -184,67 +148,35 @@ The file structure is as followed. The project has two parts: `src` and `test`. 
 
 **This section describes all implementation conditions that you should abide by. Please read them carefully.**
 
-For moving shapes, please copy the new implementation of the shape family. Since this is out of the scape of assignment 6, you do not need to write unit tests for them.
-
-* [point.h](src/point.h)
-* [two_dimensional_vector.h](src/two_dimensional_vector.h)
-* [shape.h](src/shape.h)
-* [circle.h](src/circle.h)
-* [triangle.h](src/triangle.h)
-* [rectangle.h](src/rectangle.h)
-* [compound_shape.h](src/compound_shape.h)
-
-Please also copy the files listed below to support the function.
+To support the `Observer` pattern, you first need to copy the files below to update their implementation.
 
 * [graphics.app](src/graphics.cpp)
-* [event_listener.h](src/graphics/event_listener.h)
-* [the entire sdl folder](src/graphics/sdl)
-* [the entire drag_and_drop folder](src/graphics/drag_and_drop)
+* [drag_and_drop.h](src/graphics/drag_and_drop/drag_and_drop.h)
 
-### 1. Drag and drop
+`Subject`: the `Subject` interface. It basically has three methods: `attach`, `detach`, and `notify`.
 
-`Command`: a class defining the standard methods for the *Leaf* command and the *Composite* command.
+`attach` takes an observer pointer as an argument and saves the observer in `Subject`. `detach` also takes an observer pointer as an argument. It removes the corresponding observer from `Subject`. An exception should be threw if the observer passed-in is not found. `notify` notifies all observers the `Subject` owns by calling their `update`.
 
-`GrabCommand`: a class used to handle the "Left_Mouse_Down" event. It takes the `DragAndDrop` and `CommandHistory` instances as the arguments. `GrabCommand` does **NOT** own the `DragAndDrop` and `CommandHistory` instances so it does not delete their instance in the destructor.
+**Note that `Subject` does not have the ownership of observers.** It does NOT delete observer in its destructor.
 
-* For the `execute`:
-  1. `GradCommand` should ask the current position of the mouse by asking `MousePosition`, which is a singleton object. Then the command should store the xy got from `MousePosition` as the private member.
-  2. `GradCommand` calls the `grab` method from `DragAndDrop` with the xy.
-  3. `GradCommand` then should **copy** itself into the `CommandHistory`. So, `GradCommand` should have a **copy constructor** to copy itself, in which all data member of the command are copied to the new command instance. Remember to call `beginMacroCommand` before save the command.
-* For the `undo`, `GradCommand` should call the `move` and the `drop` method from `DragAndDrop` to put the target shape to the original position.
+`Subject` has an additional method: `getObservers` to return its observers for testability.
 
-`MoveCommand`: a class used to handle the "Left_Mouse_Move" event. Same as `GrabCommand`, it takes the `DragAndDrop` and `CommandHistory` instances as the arguments and does not own these instances.
+`Observer`: the `Observer` interface. It has one method: `update`. This method is virtual and takes no argument. It should be overridden by subclasses.
 
-* For the `execute`, `MoveCommand` acts like `GradCommand` except that it calls the `move` method instead of the `grab`.
-* **Note that it depends on you whether `MoveCommand` should be put in the history.** Sometimes the move commands will be lost when the mouse moves due to the inherent flaws in the SDL library; as the result, the undo of the `MoveCommand`s could not make the shape return to the origin. The TA tests also do not test whether or not the `MoveCommand` is copied into the history.
-* For the `undo`, `MoveCommand` should call the `move` method from `DragAndDrop`.
+`Drawing`: a class owning all shape instances. It inherits from the `Subject` class. Since `Subject` does not have virtual methods, `Drawing` does not override any methods.
 
-`DropCommand`: a class used to handle the `Left_Mouse_Up` event, with the same arguments of two commands above.
+Its constructor takes a vector of the pointers to shapes as an argument. **`Drawing` owns these shapes. It is responsible for deleting shapes when being destroyed.**
 
-* For the `execute`, `DropCommand` acts like `GradCommand` except that it calls the `drop` method and calls `endMacroCommand` after saving its copied instance.
-* For the `undo`, it should call the `grab` method from `DragAndDrop`.
+`Drawing` has an additional method named `shapes`, which returns the vector to let other classes make manipulation on shapes.
 
-### 2. Undo
+`RealCanvas`: a class helping to repaint shapes on the window. It is an `Observer`. The overridden method `update` of `RealCanvas` uses `ShapePrinter` to redraw all shapes. **You can refer to the `RefreshCommand` written in the previous assignment.**
 
-`UndoCommand`: a class used to handle the `Right_Mouse_Down` event. It only takes a `CommandHistory` instance as an argument and does not own the instance.
+Its constructor takes the instances of `Canvas` and `Drawing` as the arguments. **You can make a decision whether `RealCanvas` attaches itself to the `Drawing` in its constructor or let `graphics.cpp` do this.** If you want `RealCanvas` to attach itself to the `Drawing` in its constructor, remember to remove the statement at line 51 in `graphics.cpp`.
 
-* For the `execute` of `UndoCommand`, the command should call the `undo` from the `CommandHistory`. It does **NOT** copy itself into the history.
-* For the `undo`, `UndoCommand` has no implementation because the `UndoCommand` is solely used to handle the event.
-
-`CommandHistory`: a class used to record all executed commands in a stack. **It should have the ownership of all commands it stores in the stack**, meaning that it should delete all command instances in the destructor.
-
-* When the client calls `addCommand` without the macro triggered, it simply put the command in the stack.
-* When the client calls `beginMacroCommand`, a `MacroCommand` instance should be created and put in the stack. In the following `addCommand`, the command passed in should be put in the macro command at the top of the stack.
-* When the client calls `endMacroCommand`, the "Macro" mode ends. The following commands passed in should be directly put in the stack.
-* When the client calls `undo`, a command should be popped out from the stack and its undo should be called. The popped out command will not be delete immediately. In order to test the `CommandHistory`, the popped command should be placed in another container, say another stack, and be deleted in the destructor.
-
-`MacroCommand`: a class used to bundle multiple commands as a single command. In this assignment, we use it to save a series of commands as single for undo. **It should have the ownership of the commands it has.**
-
-Like `CompoundShape`, when the client calls the `execute` or `undo` of macro, the macro should call the `execute` or `undo` of the children command.
-
+**`RealCanvas` does not own the `Canvas` and `Drawing`.**
 
 - **Each class method declared in header files must be implemented and have at least one test case.**
-- **No more tests are required for the classes other than the mentioned above.**
+- **No tests are required for the Observer class because is only has a virtual method.**
 - For all classes above, an exception should raise if we give any illegal input to the constructor. The exception type is not specified, which can be as simple as `string`.
 - If the type of returned value is `double`, your assertion should compare the value with the error not greater than `0.001`.
 - All `double` values should be rounded to two decimal place and be padded with 0 when turned into `string`, e.g., `-1.999` will be `"-2.00"`.
@@ -257,9 +189,9 @@ Please use the [workspace](http://140.124.181.100/course/environment_setting) yo
 
 ## Grading Rubrics
 
-- **One memory leak: one point deducted.**
 - Unit tests written by yourself: 50%.
 - Unit tests written by TA: 50%.
+- To save time, no points are deducted for any memory leaks, but you are encouraged to eliminate leaks where possible.
 
 ## You Will Get 0 Points If
 
