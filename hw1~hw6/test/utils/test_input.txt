@@ -1,0 +1,14 @@
+CompoundShape (
+    CompoundShape (
+        Circle (
+            Vector ((0.00, 0.00), (0.00, 5.00))
+        ), Rectangle (
+            Vector ((0.00, 0.00), (0.00, 5.00)),
+            Vector ((0.00, 0.00), (5.00, 0.00))
+        )
+    ), CompoundShape (
+        Circle (
+            Vector ((0.00, 0.00), (0.00, 3.00))
+        )
+    )
+)
