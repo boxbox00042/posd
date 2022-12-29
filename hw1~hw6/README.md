@@ -24,7 +24,7 @@ The drag and drop contains three actions: grab, move, and drop. When a user pres
 
 Below is the class diagram for the three actions, in which we have three commands for the three actions: `GrabCommand`, `MoveCommand`, and `DropCommand`.
 
-![Drag and drop class diagram](materials/DragAndDropClassDiagram.png)
+![Drag and drop class diagram](/hw1~hw6/materials/DragAndDropClassDiagram.png)
 
 `SDLRenderer` is the class responsible for rendering shapes on the screen. It can also detect events from user actions, such as mouse click or mouse move. Whenever it detects an event occurred, it notifies `EventListener` to carry out the corresponding callbacks.
 
