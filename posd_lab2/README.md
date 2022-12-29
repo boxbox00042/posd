@@ -14,7 +14,7 @@ In the last assignment, we have complete the drag and drop function on shapes. W
 
 Below is the structure of the `Observer` pattern. The `Subject` refers to an observable, the one that is operated. It knows several `Observer`s. Whenever there is a new changes on the subject, the subject notifies its observers to update their states by getting new states from the subject.
 
-![Observer structure](/materials/ObserverStructure.png)
+![Observer structure](/posd_lab2/materials/ObserverStructure.png)
 
 The class diagram is shown below. On the left side of the diagram, there are classes we used to open a window and render shapes. On the right side, the classes with bolder borders are the ones you need to implement:
 
@@ -22,7 +22,7 @@ The class diagram is shown below. On the left side of the diagram, there are cla
 2. The `Drawing` class, which represents the rendered shapes. It owns the shape instances. Classes that need to make changes on shapes should ask `Drawing` for access.
 3. The `RealCanvas` class, which helps to repaint shapes on the window. It is *attached* on the `Drawing` for monitoring any changes happen on the shapes.
 
-![Observer class diagram](/materials/Observer.png)
+![Observer class diagram](/posd_lab2/materials/Observer.png)
 
 When we click and move a shape, the correspond commands are triggered to call the DragAndDrop to carry out the drag function. In the previous assignment, the DragAndDrop takes the shape instances directly; in this exam instead, it takes `Drawing` to access the shape instances. It asks `Drawing` to get all shapes to find out the one the user chosen.
 
